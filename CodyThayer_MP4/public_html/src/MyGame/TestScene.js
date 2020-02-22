@@ -32,6 +32,7 @@ function TestScene() {
     this.cSpaceOriginY = 0;
     this.cSpaceWidth = 480;
     this.cSpaceHeight = 480;
+    this.initAnimObjWidth = 100;
 }
 gEngine.Core.inheritPrototype(TestScene, Scene);
 
@@ -159,20 +160,20 @@ TestScene.prototype.update = function () {
         //--------------------------------------------------------------------//
         // update camera settings to correct aspect ratio
         var ibRatio = ibHeight / ibWidth;
-        var objWidthInWC = this.animationViewCamera.getWCWidth();
         if (ibRatio <= 1) {
-            this.animObj.getXform().setSize(objWidthInWC, (objWidthInWC * ibRatio));
+            this.animObj.getXform().setSize(this.initAnimObjWidth, (this.initAnimObjWidth * ibRatio));
             var h = this.cSpaceHeight * ibRatio;
             var originY = this.cSpaceOriginY + (this.cSpaceHeight / 2) - (h / 2);
             this.animationViewCamera.setViewport([this.cSpaceOriginX, originY, this.cSpaceWidth, h]);
         } else {
             // Invert bound ratio, then calculate settings
             ibRatio = 1 / ibRatio;
-            
-            this.animObj.getXform().setSize((objWidthInWC * ibRatio), objWidthInWC);
+            this.animObj.getXform().setSize((this.initAnimObjWidth * ibRatio), this.initAnimObjWidth);
             var w = this.cSpaceWidth * ibRatio;
             var originX = this.cSpaceOriginX + (this.cSpaceWidth / 2) - (w / 2);
             this.animationViewCamera.setViewport([originX, this.cSpaceOriginY, w, this.cSpaceHeight]);
+            var camW = this.initAnimObjWidth * ibRatio;
+            this.animationViewCamera.setWCWidth(camW);
         }
         
     }
