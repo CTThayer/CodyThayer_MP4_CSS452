@@ -27,6 +27,11 @@ function TestScene() {
     this.interactiveBoundObj = null;
     this.spriteSource = null;
     this.animObj = null;
+    
+    this.cSpaceOriginX = 640;
+    this.cSpaceOriginY = 0;
+    this.cSpaceWidth = 480;
+    this.cSpaceHeight = 480;
 }
 gEngine.Core.inheritPrototype(TestScene, Scene);
 
@@ -85,6 +90,8 @@ TestScene.prototype.initialize = function () {
     this.animObj.setColor([1, 1, 1, 0]);
     this.animObj.getXform().setPosition(-100, -100);
     this.animObj.getXform().setSize(100, 100);
+    this.animObj.setAnimationType(SpriteAnimateRenderable.eAnimationType.eAnimateRight);
+    this.animObj.setAnimationSpeed(50);
     
     this.testRenderable = new Renderable();
     this.testRenderable.setColor(1, 0, 0, 1);
@@ -129,7 +136,7 @@ TestScene.prototype.update = function () {
     this.interactiveBoundObj.update();
     
     if (this.interactiveBoundObj.getHasChanged()) {
-        // Get InteractiveBound location and translate to Sprite Sheet UV
+        // Setup SpriteAnimateRenderable based on current interactiveBound 
         var ibPos = this.interactiveBoundObj.getPosition();
         var ibWidth = this.interactiveBoundObj.getWidth();
         var ibHeight = this.interactiveBoundObj.getHeight();
@@ -141,50 +148,33 @@ TestScene.prototype.update = function () {
         var ibTopInUV = ibPosInUV[1] + (ibHeightInUV / 2);
         var ibLeftInUV = ibPosInUV[0] + (ibWidthInUV / 2);
         
-//        console.log("ibWidthInUV: " + ibWidthInUV);
-//        console.log("ibHeightInUV: " + ibHeightInUV);
-//        console.log("ibTopInUV: " + ibWidthInUV);
-//        console.log("ibTopInUV: " + ibHeightInUV);
-
-        var offsetFromTopInUV = 1 - ibTopInUV;
-        var offsetFromLeftInUV = 1 - ibLeftInUV;
-
-        // Set SpriteAnimateRenderable's parameters
-        
-        var ibTopLeftInPixel = this.spriteSource.getPixelFromUV(ibLeftInUV, ibTopInUV);
-        
-        console.log("ibTopLeftInPixel: " + ibTopLeftInPixel);
-        
-        var top = this.spriteSource.pixelHeight - ibTopLeftInPixel[1];
-        var left = this.spriteSource.pixelWidth - ibTopLeftInPixel[0];
-        var pixW = this.spriteSource.pixelWidth * ibWidthInUV;
-        var pixH = this.spriteSource.pixelHeight * ibHeightInUV;
-        
-//        console.log("top: " + top);
-//        console.log("left: " + left);
-//        console.log("pixW: " + pixW);
-//        console.log("pixH: " + pixH);
-        
-        this.animObj.setSpriteSequence(
-                top,
-                left,
-                pixW,
-                pixH,
+        this.animObj.setSpriteSequenceUV(
+                ibTopInUV,
+                ibLeftInUV,
+                ibWidthInUV,
+                ibHeightInUV,
                 5,      // number of elements in this sequence
                 0);     // horizontal padding in between
-
         
-//        this.animObj.setSpriteSequenceUV(
-//                offsetFromTopInUV,
-//                offsetFromLeftInUV,
-//                ibWidthInUV,
-//                ibHeightInUV,
-//                5,      // number of elements in this sequence
-//                0);     // horizontal padding in between
-                
-                
-        this.animObj.setAnimationType(SpriteAnimateRenderable.eAnimationType.eAnimateRight);
-        this.animObj.setAnimationSpeed(50);
+        //--------------------------------------------------------------------//
+        // update camera settings to correct aspect ratio
+        var ibRatio = ibHeight / ibWidth;
+        var objWidthInWC = this.animationViewCamera.getWCWidth();
+        if (ibRatio <= 1) {
+            this.animObj.getXform().setSize(objWidthInWC, (objWidthInWC * ibRatio));
+            var h = this.cSpaceHeight * ibRatio;
+            var originY = this.cSpaceOriginY + (this.cSpaceHeight / 2) - (h / 2);
+            this.animationViewCamera.setViewport([this.cSpaceOriginX, originY, this.cSpaceWidth, h]);
+        } else {
+            // Invert bound ratio, then calculate settings
+            ibRatio = 1 / ibRatio;
+            
+            this.animObj.getXform().setSize((objWidthInWC * ibRatio), objWidthInWC);
+            var w = this.cSpaceWidth * ibRatio;
+            var originX = this.cSpaceOriginX + (this.cSpaceWidth / 2) - (w / 2);
+            this.animationViewCamera.setViewport([originX, this.cSpaceOriginY, w, this.cSpaceHeight]);
+        }
+        
     }
     
     this.animObj.updateAnimation();
